@@ -32,6 +32,13 @@
 # Joe Desbonnet, jdesbonnet@gmail.com
 # Version 0.1, 7 Feb 2014.
 #
+# Dependencies:
+# * SoX audio tool
+# * GNU Parallel (optional)
+# * mp3info
+# * mencoder (part of mplayer)
+# * ffmpeg
+#
 # There are a few problems with this script:
 # You'll need to edit to change title/credit on plot. TODO move to command line
 # I've used mencoder to assemble the PNG files into a video, but I find the 
@@ -56,10 +63,11 @@ PARALLEL=/home/joe/Downloads/parallel-20140122/src/parallel
 FFMPEG=/var/tmp/ffmpeg-1.0/ffmpeg
 MENCODER=mencoder
 
-# Frame rate of video. 24, 30 common choices.
+# Frame rate of video (frames/second). 24, 30 common choices.
 FPS=30
 
-# Width of the spectrogram in seconds
+# Width of the spectrogram in seconds. The smaller this value the faster
+# the scrolling speed. 1s - 5s are good values.
 SPECTROGRAM_WIDTH=1
 
 # Found that audio was about 0.5s ahead (ie the current
@@ -120,7 +128,9 @@ for (( i=0; i<=$nframes; i++ )); do
   echo "sox ${MONO_FILE} -n spectrogram -d 0:${SPECTROGRAM_WIDTH} -S $audio_offset -t \"${TITLE} t=$tf\" -c \"${CREDIT}\" -o spectrum-${ii}.png" >> $PARALLEL_JOB
 done
 
-# Run lines in PARALLEL_JOB file in parallel
+# Run lines in PARALLEL_JOB file in parallel which will yield a huge 
+# performance boost on a multiprocessor computer. If parallel is not 
+# available you could run this as a sequential script file.
 cat $PARALLEL_JOB | $PARALLEL
 
 # TODO: should be necessary to encode to video only once, but ffmpeg png 
