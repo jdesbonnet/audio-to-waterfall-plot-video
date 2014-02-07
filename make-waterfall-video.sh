@@ -28,7 +28,7 @@
 
 
 #
-# Script to generate a scrolling spectrum waterfall plot from and audio file.
+# Script to generate a scrolling spectrum waterfall plot from a MP3 audio file.
 # Joe Desbonnet, jdesbonnet@gmail.com
 # Version 0.1, 7 Feb 2014.
 #
@@ -74,7 +74,7 @@ MP3_FILE=$1
 
 # Parallel job file
 PARALLEL_JOB="_parallel_jobs.sh"
-MONO_FILE="mono.wav"
+MONO_FILE="_mono.wav"
 
 # Get length of MP3 file audio in seconds
 audio_length=`${MP3INFO} -p "%S" ${MP3_FILE}`
@@ -105,8 +105,9 @@ fi
 x=$((${SPECTROGRAM_WIDTH}*${FPS}))
 
 # Make parallel job file. Unfortunately very slow due to invocation of bc. 
-# In fact on my 4 x Xeon machine it takes less time to execute the SoX
-# command than it does to generate it!
+# bc is used because float math is required. bash only supports int math.
+# Add 1000000 to frame number so that file globbing returns files in correct
+# order.
 for (( i=0; i<=$nframes; i++ )); do
   t=`bc -l <<< "$i/$FPS"`
   if [ $i -lt $x ]; then
@@ -122,13 +123,24 @@ done
 # Run lines in PARALLEL_JOB file in parallel
 cat $PARALLEL_JOB | $PARALLEL
 
-# Make video file of spectrograms
+# TODO: should be necessary to encode to video only once, but ffmpeg png 
+# input is not working for me for some reason.
+
+# Make video AVI file of spectrograms. When I play back with mplayer
+# a/v sync is off by ~0.5s. However when converted again with ffmpeg
+# to H.264 all is right. So not sure what's going on here.
 $MENCODER mf://spectrum-*.png \
 -mf fps=${FPS}:type=png \
 -ovc lavc -lavcopts vcodec=mpeg4:vbitrate=3200 \
 -audiofile ${MP3_FILE} -oac copy  \
 -o output.avi 
 
-# Now convert to MP4
+# Now convert to H.264 MP4. This fixes a/v timing problem.
 $FFMPEG -i output.avi -c:v libx264 -c:a libfaac output.mp4
+
+# Cleanup temporary files
+#rm spectrogram-*.png
+#rm output.avi
+#rm ${MONO_FILE}
+#rm ${PARALLEL_JOB}
 
