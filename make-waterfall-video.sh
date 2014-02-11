@@ -77,8 +77,33 @@ SPECTROGRAM_WIDTH=1
 # not seem necessary any more.
 TWIDDLE=0.0
 
+# Parse command line options
+max=0 
+while getopts "c:t:" flag ; do
+	case $flag in
+		c)
+		CREDIT=$OPTARG
+		;;
+
+		t)
+		TITLE=$OPTARG
+		;;
+	esac 
+
+	if [ $OPTIND -gt $max ] ; then
+		max=$OPTIND 
+	fi 
+done 
+
+# Shift params to the left so that first param after options is at $1
+shift $((max-1))
+
 # Audio file
 MP3_FILE=$1
+
+echo "TITLE=${TITLE}"
+echo "CREDIT=${CREDIT}"
+echo "MP3_FILE=${MP3_FILE}"
 
 # Parallel job file
 PARALLEL_JOB="_parallel_jobs.sh"
