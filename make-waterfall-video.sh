@@ -52,9 +52,30 @@
 # the video in fragments and deleting the PNG files after a fragment is 
 # generated.
 
-TITLE="Toccata and Fugue in D Minor (Music credit: archive.org, public domain)"
-#TITLE="Morning concert, Lausanne Cathedral, 2014-02-01"
-CREDIT="Rendering by Joe Desbonnet  http://jdesbonnet.blogspot.ie"
+function usage() {
+cat <<EOF
+./make-waterfall-video.sh [ -h ] [ -v ] [ -c <credit> ] [ -t <title>] <mp3file>
+ -c <credit> : will be displayed at bottom left
+ -t <title> : will be displayed centered on top
+ -h : display this message
+ -v : display version
+
+For more information see this blog post:
+http://jdesbonnet.blogspot.ie
+
+Or GitHub at https://github.com/jdesbonnet/audio-to-waterfall-plot-video
+EOF
+}
+
+if [ $# -lt 1 ]; then
+	usage 
+	exit
+fi
+
+VERSION_NUMBER="0.2"
+VERSION_DATE="11 Feb 2014"
+TITLE=""
+CREDIT="https://github.com/jdesbonnet/audio-to-waterfall-plot-video"
 
 # Location of tools
 MP3INFO=mp3info
@@ -79,7 +100,7 @@ TWIDDLE=0.0
 
 # Parse command line options
 max=0 
-while getopts "c:t:" flag ; do
+while getopts "c:ht:v" flag ; do
 	case $flag in
 		c)
 		CREDIT=$OPTARG
@@ -87,6 +108,16 @@ while getopts "c:t:" flag ; do
 
 		t)
 		TITLE=$OPTARG
+		;;
+
+		h)
+		usage
+		exit
+		;;
+
+		v)
+		echo "$VERSION_NUMBER $VERSION_DATE"
+		exit
 		;;
 	esac 
 
