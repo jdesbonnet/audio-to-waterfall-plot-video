@@ -33,7 +33,7 @@ VERSION_DATE="11 Feb 2014"
 #
 # Script to generate a scrolling spectrum waterfall plot from a MP3 audio file.
 # Joe Desbonnet, jdesbonnet@gmail.com
-# Version 0.1, 7 Feb 2014.
+# Version 0.2, 11 Feb 2014.
 #
 # Dependencies:
 # * SoX audio tool
@@ -54,6 +54,15 @@ VERSION_DATE="11 Feb 2014"
 # need *lots* of temporary disk space. This can be improved by generating
 # the video in fragments and deleting the PNG files after a fragment is 
 # generated.
+#
+# RELEASE NOTES:
+# Version 0.1, 7 Feb 2014:
+# First release. Some parameters hard coded and required script edit to change.
+#
+# Version 0.2 11 Feb 2014:
+# Make all important parameters configurable from the command line with switches
+# such as -t <title> -r <frame-per-second> etc. Display help if no parameters
+# given: full documenation in usage function.
 
 
 # Display help text
