@@ -27,6 +27,9 @@
 
 
 
+VERSION_NUMBER="0.2"
+VERSION_DATE="11 Feb 2014"
+
 #
 # Script to generate a scrolling spectrum waterfall plot from a MP3 audio file.
 # Joe Desbonnet, jdesbonnet@gmail.com
@@ -52,13 +55,20 @@
 # the video in fragments and deleting the PNG files after a fragment is 
 # generated.
 
+
+# Display help text
 function usage() {
 cat <<EOF
-./make-waterfall-video.sh [ -h ] [ -v ] [ -c <credit> ] [ -t <title>] <mp3file>
- -c <credit> : will be displayed at bottom left
- -t <title> : will be displayed centered on top
- -h : display this message
- -v : display version
+./make-waterfall-video.sh options... <mp3file>
+
+Options:
+
+ -c <credit> : will be displayed at bottom left (default credit to this script)
+ -t <title> : will be displayed centered on top (default none)
+ -d <seconds> : width of the spectrogram in seconds. Determines scroll speed. (default 1)
+ -r <frames-per-second> : Video frame rate (default 30)
+ -h : display this message and exit
+ -v : display version and exit
 
 For more information see this blog post:
 http://jdesbonnet.blogspot.ie
@@ -72,10 +82,8 @@ if [ $# -lt 1 ]; then
 	exit
 fi
 
-VERSION_NUMBER="0.2"
-VERSION_DATE="11 Feb 2014"
-TITLE=""
-CREDIT="https://github.com/jdesbonnet/audio-to-waterfall-plot-video"
+
+
 
 # Location of tools
 MP3INFO=mp3info
@@ -83,6 +91,16 @@ SOX=sox
 PARALLEL=/home/joe/Downloads/parallel-20140122/src/parallel 
 FFMPEG=/var/tmp/ffmpeg-1.0/ffmpeg
 MENCODER=mencoder
+
+#
+# Default value of parameters
+#
+
+# Title appears on top-center
+TITLE=""
+
+# Credit on bottom-left
+CREDIT="https://github.com/jdesbonnet/audio-to-waterfall-plot-video"
 
 # Frame rate of video (frames/second). 24, 30 common choices.
 FPS=30
@@ -98,12 +116,24 @@ SPECTROGRAM_WIDTH=1
 # not seem necessary any more.
 TWIDDLE=0.0
 
+
+#
 # Parse command line options
+#
 max=0 
-while getopts "c:ht:v" flag ; do
+while getopts "c:d:hr:t:v" flag ; do
 	case $flag in
 		c)
 		CREDIT=$OPTARG
+		;;
+
+
+		d)
+		SPECTROGRAM_WIDTH=$OPTARG
+		;;
+
+		r)
+		FPS=$OPTARG
 		;;
 
 		t)
@@ -135,6 +165,8 @@ MP3_FILE=$1
 echo "TITLE=${TITLE}"
 echo "CREDIT=${CREDIT}"
 echo "MP3_FILE=${MP3_FILE}"
+echo "SPECTROGRAM_WIDTH=${SPECTROGRAM_WIDTH} seconds"
+echo "FPS=${FPS} frames/second"
 
 # Parallel job file
 PARALLEL_JOB="_parallel_jobs.sh"
