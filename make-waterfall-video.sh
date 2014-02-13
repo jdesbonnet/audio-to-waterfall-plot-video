@@ -27,19 +27,18 @@
 
 
 
-VERSION_NUMBER="0.2"
-VERSION_DATE="11 Feb 2014"
+VERSION_NUMBER="0.3.0"
+VERSION_DATE="13 Feb 2014"
 
 #
 # Script to generate a scrolling spectrum waterfall plot from a MP3 audio file.
-# Joe Desbonnet, jdesbonnet@gmail.com
-# Version 0.2, 11 Feb 2014.
+# Author: Joe Desbonnet, jdesbonnet@gmail.com
+# Version 0.3, 13 Feb 2014.
 #
 # Dependencies:
 # * SoX audio tool
 # * GNU Parallel (optional)
 # * mp3info
-# * mencoder (part of mplayer)
 # * ffmpeg
 #
 # There are a few problems with this script:
@@ -55,6 +54,9 @@ VERSION_DATE="11 Feb 2014"
 # the video in fragments and deleting the PNG files after a fragment is 
 # generated.
 #
+# See this blog post for more information: 
+# http://jdesbonnet.blogspot.ie/2014/02/convert-mp3-to-scrolling-spectrum.html
+#
 # RELEASE NOTES:
 # Version 0.1, 7 Feb 2014:
 # First release. Some parameters hard coded and required script edit to change.
@@ -63,6 +65,11 @@ VERSION_DATE="11 Feb 2014"
 # Make all important parameters configurable from the command line with switches
 # such as -t <title> -r <frame-per-second> etc. Display help if no parameters
 # given: full documenation in usage function.
+#
+# Version 0.3 13 Feb 2014:
+# Eliminate need for mencoder. Encode once using ffmpeg. Tested with v2.1.3.
+# Option to change output video file name with -o. Defaults to output.mp4
+
 
 
 # Display help text
@@ -76,11 +83,12 @@ Options:
  -t <title> : will be displayed centered on top (default none)
  -d <seconds> : width of the spectrogram in seconds. Determines scroll speed. (default 1)
  -r <frames-per-second> : Video frame rate (default 30)
+ -o <output-file> : name of output mp4 file (default output.mp4)
  -h : display this message and exit
  -v : display version and exit
 
 For more information see this blog post:
-http://jdesbonnet.blogspot.ie
+http://jdesbonnet.blogspot.ie/2014/02/convert-mp3-to-scrolling-spectrum.html
 
 Or GitHub at https://github.com/jdesbonnet/audio-to-waterfall-plot-video
 EOF
@@ -98,7 +106,7 @@ fi
 MP3INFO=mp3info
 SOX=sox
 PARALLEL=/home/joe/Downloads/parallel-20140122/src/parallel 
-FFMPEG=/var/tmp/ffmpeg-1.0/ffmpeg
+FFMPEG=/var/tmp/ffmpeg-2.1.3/ffmpeg
 MENCODER=mencoder
 
 #
@@ -118,6 +126,9 @@ FPS=30
 # the scrolling speed. 1s - 5s are good values.
 SPECTROGRAM_WIDTH=1
 
+# Output video file name
+OUTPUT_FILE="output.mp4"
+
 # Found that audio was about 0.5s ahead (ie the current
 # audio hadn't scrolled into view on the right yet).
 # This corrects for it. Why it's needed, not sure.
@@ -130,7 +141,7 @@ TWIDDLE=0.0
 # Parse command line options
 #
 max=0 
-while getopts "c:d:hr:t:v" flag ; do
+while getopts "c:d:ho:r:t:v" flag ; do
 	case $flag in
 		c)
 		CREDIT=$OPTARG
@@ -149,6 +160,10 @@ while getopts "c:d:hr:t:v" flag ; do
 		TITLE=$OPTARG
 		;;
 
+		o)
+		OUTPUT_FILE=$OPTARG
+		;;
+
 		h)
 		usage
 		exit
@@ -158,6 +173,7 @@ while getopts "c:d:hr:t:v" flag ; do
 		echo "$VERSION_NUMBER $VERSION_DATE"
 		exit
 		;;
+
 	esac 
 
 	if [ $OPTIND -gt $max ] ; then
@@ -176,6 +192,7 @@ echo "CREDIT=${CREDIT}"
 echo "MP3_FILE=${MP3_FILE}"
 echo "SPECTROGRAM_WIDTH=${SPECTROGRAM_WIDTH} seconds"
 echo "FPS=${FPS} frames/second"
+echo "OUTPUT_FILE=$OUTPUT_FILE"
 
 # Parallel job file
 PARALLEL_JOB="_parallel_jobs.sh"
@@ -199,7 +216,7 @@ nframes=`bc -l <<< "$audio_length*$FPS"`
 echo "Title (top): $TITLE"
 echo "Credit (bottom/left): $CREDIT"
 echo "Number of frames to generate: $nframes"
-echo "Estimated temporary disk space: $(($nframes*130/1000)) MBytes"
+echo "Estimated temporary disk space: $(($nframes*185/1000)) MBytes"
 
 if [ -e $PARALLEL_JOB ]; then
 	rm $PARALLEL_JOB
@@ -236,14 +253,23 @@ cat $PARALLEL_JOB | $PARALLEL
 # Make video AVI file of spectrograms. When I play back with mplayer
 # a/v sync is off by ~0.5s. However when converted again with ffmpeg
 # to H.264 all is right. So not sure what's going on here.
-$MENCODER mf://spectrum-*.png \
--mf fps=${FPS}:type=png \
--ovc lavc -lavcopts vcodec=mpeg4:vbitrate=3200 \
--audiofile ${MP3_FILE} -oac copy  \
--o output.avi 
+#$MENCODER mf://spectrum-*.png \
+#-mf fps=${FPS}:type=png \
+#-ovc lavc -lavcopts vcodec=mpeg4:vbitrate=3200 \
+#-audiofile ${MP3_FILE} -oac copy  \
+#-o output.avi 
 
 # Now convert to H.264 MP4. This fixes a/v timing problem.
-$FFMPEG -i output.avi -c:v libx264 -c:a libfaac output.mp4
+#$FFMPEG -i output.avi -c:v libx264 -c:a libfaac output.mp4
+
+# This works for FFMPEG 2.1.3
+$FFMPEG -r $FPS -f image2 -pattern_type glob \
+ -i 'spectrum-*.png' \
+ -i ${MP3_FILE} \
+ -vf scale=640x480 -pix_fmt yuvj420p -c:v libx264 \
+ -c:a aac -strict experimental -b:a 192k \
+ $OUTPUT_FILE
+
 
 # Cleanup temporary files
 #rm spectrogram-*.png
