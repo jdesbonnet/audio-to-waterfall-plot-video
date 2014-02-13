@@ -252,10 +252,13 @@ cat $PARALLEL_JOB | $PARALLEL
 
 
 
-# Make video AVI file of spectrogram images.
+# Make video MP4 file of spectrogram images.
 # This works for FFMPEG 2.1.3. Does not for older FFMPEG 1.0.
 # H.264 codec is optional (due to patent concerns) in FFMPEG
 # so you may have to build your own version (as I did).
+# The default spectrogram image size does not correspond to
+# any common video resolution so using -vf scale=1280x720 
+# to generate video to the common 720p video resolution.
 $FFMPEG -r $FPS -f image2 -pattern_type glob \
  -i 'spectrum-*.png' \
  -i ${MP3_FILE} \
