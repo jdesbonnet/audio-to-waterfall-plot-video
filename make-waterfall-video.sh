@@ -247,26 +247,16 @@ done
 # available you could run this as a sequential script file.
 cat $PARALLEL_JOB | $PARALLEL
 
-# TODO: should be necessary to encode to video only once, but ffmpeg png 
-# input is not working for me for some reason.
 
-# Make video AVI file of spectrograms. When I play back with mplayer
-# a/v sync is off by ~0.5s. However when converted again with ffmpeg
-# to H.264 all is right. So not sure what's going on here.
-#$MENCODER mf://spectrum-*.png \
-#-mf fps=${FPS}:type=png \
-#-ovc lavc -lavcopts vcodec=mpeg4:vbitrate=3200 \
-#-audiofile ${MP3_FILE} -oac copy  \
-#-o output.avi 
 
-# Now convert to H.264 MP4. This fixes a/v timing problem.
-#$FFMPEG -i output.avi -c:v libx264 -c:a libfaac output.mp4
-
-# This works for FFMPEG 2.1.3
+# Make video AVI file of spectrogram images.
+# This works for FFMPEG 2.1.3. Does not for older FFMPEG 1.0.
+# H.264 codec is optional (due to patent concerns) in FFMPEG
+# so you may have to build your own version (as I did).
 $FFMPEG -r $FPS -f image2 -pattern_type glob \
  -i 'spectrum-*.png' \
  -i ${MP3_FILE} \
- -vf scale=640x480 -pix_fmt yuvj420p -c:v libx264 \
+ -vf scale=1280x720 -pix_fmt yuvj420p -c:v libx264 \
  -c:a aac -strict experimental -b:a 192k \
  $OUTPUT_FILE
 
