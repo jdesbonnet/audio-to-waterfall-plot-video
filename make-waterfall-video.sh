@@ -244,8 +244,11 @@ done
 
 # Run lines in PARALLEL_JOB file in parallel which will yield a huge 
 # performance boost on a multiprocessor computer. If parallel is not 
-# available you could run this as a sequential script file.
+# available you could run this as a sequential script file by 
+# uncommenting the next line and commenting/removing the line after that.
+# . $PARALLEL_JOB
 cat $PARALLEL_JOB | $PARALLEL
+
 
 
 
